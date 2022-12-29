@@ -5,11 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Request extends Model
+class Demand extends Model
 {
     use HasFactory;
 
-    protected $table = 'requests';
+    protected $table = 'demands';
     protected $primary_key = 'id';
 
     public function rating()

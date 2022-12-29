@@ -14,8 +14,8 @@ return new class extends Migration
     public function up()
     {
         Schema::disableForeignKeyConstraints();
-        Schema::dropIfExists('requests');
-        Schema::create('requests', function (Blueprint $table) {
+        Schema::dropIfExists('demands');
+        Schema::create('demands', function (Blueprint $table) {
              $table->bigIncrements('id');
              $table->string('description');
              $table->string('address');
@@ -24,12 +24,14 @@ return new class extends Migration
              $table->decimal('longitude', 10, 8)->nullable();
              $table->decimal('latitude', 11, 8)->nullable();
              $table->foreignId('status_id')
+             ->nullable()
              ->constrained('statuses')
              ->onDelete('cascade');
              $table->foreignId('user_id')
              ->constrained('users')
              ->onDelete('cascade');
              $table->foreignId('rating_id')
+             ->nullable()
              ->constrained('ratings')
              ->onDelete('cascade'); 
              $table->foreignId('service_id')
@@ -47,7 +49,7 @@ return new class extends Migration
     public function down()
     {
         Schema::disableForeignKeyConstraints();
-        Schema::dropIfExists('requests');
+        Schema::dropIfExists('demands');
         Schema::enableForeignKeyConstraints();
     }
 };

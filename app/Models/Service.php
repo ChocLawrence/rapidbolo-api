@@ -22,8 +22,8 @@ class Service extends Model
         return $this->belongsTo('App\Models\Category');
     }
 
-    public function requests()
+    public function demands()
     {
-        return $this->hasMany('App\Models\Request');
+        return $this->hasMany('App\Models\Demand');
     }
 }

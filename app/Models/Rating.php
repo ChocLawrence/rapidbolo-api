@@ -12,8 +12,8 @@ class Rating extends Model
     protected $table = 'ratings';
     protected $primary_key = 'id';
 
-    public function request()
+    public function demand()
     {
-        return $this->belongsTo('App\Models\Request');
+        return $this->belongsTo('App\Models\Demand');
     }
 }

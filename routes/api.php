@@ -1,6 +1,6 @@
 <?php
 
-use Illuminate\Http\Request;
+use Illuminate\Http\Demand;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\TagController;
@@ -12,7 +12,7 @@ use App\Http\Controllers\StatusController;
 use App\Http\Controllers\SliderController;
 use App\Http\Controllers\PaymentMethodController;
 use App\Http\Controllers\CategoryController;
-use App\Http\Controllers\RequestController;
+use App\Http\Controllers\DemandController;
 use App\Http\Controllers\RatingController;
 use App\Http\Controllers\PlanController;
 use App\Http\Controllers\SubscriberController;
@@ -82,11 +82,12 @@ Route::middleware(['cors'])->group(function () {
 
     //general for all logged in users.
 
-    //requests
-    // Route::get('requests',[RequestController::class, 'getRequests']);
-    // Route::get('requests/{id}',[RequestController::class, 'getRequest']);
-    // Route::put('requests/{id}',[RequestController::class,'updateRequest']);
-    // Route::delete('requests/{id}',[RequestController::class,'deleteRequest']);
+    //demands
+    Route::get('demands',[DemandController::class, 'getDemands']);
+    Route::post('demands',[DemandController::class,'addDemand']);
+    Route::get('demands/{id}',[DemandController::class, 'getDemand']);
+    Route::post('demands/{id}',[DemandController::class,'updateDemand']);
+    Route::delete('demands/{id}',[DemandController::class,'deleteDemand']);
 
     //chats
     // Route::get('chats',[ChatController::class, 'getChats']);
@@ -137,10 +138,11 @@ Route::middleware(['cors'])->group(function () {
       Route::delete('services/{id}',[ServiceController::class,'deleteService']);
 
       //statuses
-    //   Route::get('statuses',[StatusController::class, 'getStatuses']);
-    //   Route::get('statuses/{id}',[StatusController::class, 'getStatus']);
-    //   Route::put('statuses/{id}',[StatusController::class,'updateStatus']);
-    //   Route::delete('statuses/{id}',[StatusController::class,'deleteStatus']);
+      Route::get('statuses',[StatusController::class, 'getStatuses']);
+      Route::get('statuses/{id}',[StatusController::class, 'getStatus']);
+      Route::post('statuses',[StatusController::class,'addStatus']);
+      Route::put('statuses/{id}',[StatusController::class,'updateStatus']);
+      Route::delete('statuses/{id}',[StatusController::class,'deleteStatus']);
 
       //plans
     //   Route::get('plans',[PlanController::class, 'getPlans']);

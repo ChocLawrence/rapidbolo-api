@@ -3,9 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
-use App\Models\Service;
+use App\Models\Demand;
 use App\Models\User;
 use App\Models\Status;
+use App\Models\Service;
 use App\Traits\ApiResponser;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
@@ -17,7 +18,7 @@ use Intervention\Image\Facades\Image;
 use Auth;
 
 
-class ServiceController extends Controller
+class DemandController extends Controller
 {
     use ApiResponser;
 
@@ -26,11 +27,11 @@ class ServiceController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function getServices(){
+    public function getDemands(){
 
         try{
-            $services= Service::latest()->get();
-            return $this->successResponse($services);
+            $demands= Demand::latest()->get();
+            return $this->successResponse($demands);
         }catch(\Exception $e){
             return $this->errorResponse($e->getMessage(), 404);
         }
@@ -43,11 +44,11 @@ class ServiceController extends Controller
      * @return \Illuminate\Http\Response
      */
 
-    public function getService($id) {
+    public function getDemand($id) {
 
         try{
-            $service= Service::where('id', $id)->firstOrFail();
-            return $this->successResponse($service);
+            $demand= Demand::where('id', $id)->firstOrFail();
+            return $this->successResponse($demand);
         }catch(\Exception $e){
             return $this->errorResponse($e->getMessage(), 404);
         }
@@ -58,18 +59,21 @@ class ServiceController extends Controller
     /**
      * Store a newly created resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  \Illuminate\Http\Demand  $demand
      * @return \Illuminate\Http\Response
      */
-    public function addService(Request $request)
+    public function addDemand(Request $request)
     {
 
         try{
 
-            $validator = $this->validateService();
+            $validator = $this->validateDemand();
             if($validator->fails()){
               return $this->errorResponse($validator->messages(), 422);
             }
+
+
+            //check for duplicate requests
 
             //get form image
             $images= $request->file('images');
@@ -94,28 +98,32 @@ class ServiceController extends Controller
                 $id = Auth::id();
             }
 
-            //check if user already has same service registered
-            $duplicateFound = Service::where('user_id', $id)
-                                    ->where('category_id', $request->category_id)
-                                    ->first();
 
-            if($duplicateFound){
-               return $this->errorResponse("User is already providing this service.", 422);
-            }               
-            //if false, proceed to create service for user.
+            $status = Status::where('name', 'pending')->firstOrFail();
+            $demand= new Demand();
+
+            //check if service provider is same as service requester
+
+            $service = Service::where('id', $request->service_id)->firstOrFail();
+            
+            if($service->user_id == $id){
+              return $this->errorResponse('You cannot request a service from one you provide', 422);
+            }
 
 
-            $service= new Service();
-            $service->address= $request->address;
-            $service->category_id = $request->category_id;
-            $service->description= $request->description;
-            $service->longitude= $request->longitude;
-            $service->latitude= $request->latitude;
-            $service->user_id = $id;
-            $service->images=$imagesName;
-            $service->save();
+            //end check
 
-            return $this->successResponse($service,"Saved successfully", 200);
+            $demand->status_id = $status->id; 
+            $demand->address= $request->address;
+            $demand->service_id = $request->service_id;
+            $demand->description= $request->description;
+            $demand->longitude= $request->longitude;
+            $demand->latitude= $request->latitude;
+            $demand->user_id = $id;
+            $demand->images=$imagesName;
+            $demand->save();
+
+            return $this->successResponse($demand,"Saved successfully", 200);
 
         }catch(\Exception $e){
             return $this->errorResponse($e->getMessage(), 404);
@@ -126,11 +134,11 @@ class ServiceController extends Controller
     /**
      * Update the specified resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  \Illuminate\Http\Demand  $demand
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function updateService(Request $request, $id)
+    public function updateDemand(Request $request, $id)
     {
 
         try{
@@ -141,14 +149,17 @@ class ServiceController extends Controller
 
             $request->headers->set('Content-Type', '');
 
-            $validator = $this->validateUpdateService();
+            $validator = $this->validateUpdateDemand();
             if($validator->fails()){
               return $this->errorResponse($validator->messages(), 422);
             }
 
             // get form image
             $images = $request->file('images');
-            $service = Service::findOrFail($id);
+            $demand = Demand::findOrFail($id);
+
+            //check for duplicate requests
+
             $length =  $request->length;
 
             if($length>0){
@@ -161,7 +172,7 @@ class ServiceController extends Controller
                 }
                 $imagesName = json_encode($images);
 
-                $service->images = $imagesName;
+                $demand->images = $imagesName;
             }
 
             if (Auth::check())
@@ -169,46 +180,44 @@ class ServiceController extends Controller
                 $userId = Auth::id();
             }
 
-            if($userId != $service->user_id){
+            if($userId != $demand->user_id){
                 return $this->errorResponse("Unauthorized action.", 422);
             }
 
+            //check if service provider is same as service requester
+
+            if($request->service_id){
+                $service = Service::where('id', $request->service_id)->firstOrFail();
+        
+                if($service->user_id == $id){
+                   return $this->errorResponse('You cannot request a service from one you provide', 422);
+                }
+    
+                $demand->service_id= $request->service_id;
+            }
+          
+            //end check
+
 
             if($request->address){
-              $service->address= $request->address;
+              $demand->address= $request->address;
             }
 
             if($request->description){
-              $service->description= $request->description;
+              $demand->description= $request->description;
             }
 
             if($request->longitude){
-              $service->longitude= $request->longitude;
+              $demand->longitude= $request->longitude;
             }
 
             if($request->latitude){
-              $service->latitude= $request->latitude;
+              $demand->latitude= $request->latitude;
             }
-
-            if($request->category_id){
-
-                //check if user already has same service registered
-                $duplicateFound = Service::where('user_id', $id)
-                            ->where('category_id', $request->category_id)
-                            ->first();
-
-                if($duplicateFound){
-                       return $this->errorResponse("User is already providing this service.Change category.", 422);
-                }               
-                //if false, proceed to set field.
-
-                $service->category_id= $request->category_id;
-            }
-
            
-            $service->save();
+            $demand->save();
 
-            return $this->successResponse($service);
+            return $this->successResponse($demand);
         }catch(\Exception $e){
             return $this->errorResponse($e->getMessage(), 404);
         }
@@ -221,11 +230,11 @@ class ServiceController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function deleteService($id)
+    public function deleteDemand($id)
     {
         try{
-            $service = Service::find($id);
-            $service->delete();
+            $demand = Demand::find($id);
+            $demand->delete();
 
             return $this->successResponse(null,"Deleted successfully", 200);
 
@@ -234,22 +243,22 @@ class ServiceController extends Controller
         }
     }
 
-    public function validateService(){
+    public function validateDemand(){
         return Validator::make(request()->all(), [
-           'category_id' => 'required|exists:categories,id',
+           'service_id' => 'required|exists:services,id',
            'address'=>'required|string|max:100',
-           'images'=>'nullable|mimes:jpeg,bmp,png,jpg',
+           'image'=>'nullable|mimes:jpeg,bmp,png,jpg',
            'description'=>'required|max:200',
            'longitude'=>'nullable|string|max:20',
            'latitude'=>'nullable|string|max:20',
         ]);
     }
 
-    public function validateUpdateService(){
+    public function validateUpdateDemand(){
         return Validator::make(request()->all(), [
-           'category_id' => 'nullable|exists:categories,id',
+           'service_id' => 'nullable|exists:services,id',
            'address'=>'nullable|string|max:100',
-           'images'=>'nullable|mimes:jpeg,bmp,png,jpg',
+           'image'=>'nullable|mimes:jpeg,bmp,png,jpg',
            'description'=>'nullable|max:200',
            'longitude'=>'nullable|string|max:20',
            'latitude'=>'nullable|string|max:20',

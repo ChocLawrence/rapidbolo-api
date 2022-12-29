@@ -37,9 +37,9 @@ class Status extends Model
         return $this->belongsTo('App\Models\Verification');
     }
 
-    public function request()
+    public function demand()
     {
-        return $this->belongsTo('App\Models\Request');
+        return $this->belongsTo('App\Models\Demand');
     }
 
     public function chat()

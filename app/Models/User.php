@@ -111,9 +111,9 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany('App\Models\Service');
     }
 
-    public function requests()
+    public function demands()
     {
-        return $this->hasMany('App\Models\Request');
+        return $this->hasMany('App\Models\Demand');
     }
 
     public function sliders()
