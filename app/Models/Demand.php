@@ -26,4 +26,9 @@ class Demand extends Model
     {
         return $this->hasOne('App\Models\Status');
     }
+
+    public function status_histories()
+    {
+        return $this->hasMany('App\Models\StatusHistory');
+    }
 }

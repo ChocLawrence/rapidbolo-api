@@ -14,19 +14,17 @@ return new class extends Migration
     public function up()
     {
         Schema::disableForeignKeyConstraints();
-        Schema::dropIfExists('ratings');
-        Schema::create('ratings', function (Blueprint $table) {
-             $table->bigIncrements('id');
-             $table->string('value');
-             $table->string('comment')->nullable();
-             $table->foreignId('user_id')
-             ->constrained('users')
-             ->onDelete('cascade');
-             $table->foreignId('demand_id')
-             ->constrained('demands')
-             ->onDelete('cascade');
-             $table->timestamps();
-         });
+        Schema::dropIfExists('countries');
+        Schema::create('countries', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('iso');
+            $table->string('iso3');
+            $table->string('dial');
+            $table->string('currency');
+            $table->string('currency_name');
+            $table->timestamps();
+        });
         Schema::enableForeignKeyConstraints();
     }
 
@@ -38,7 +36,7 @@ return new class extends Migration
     public function down()
     {
         Schema::disableForeignKeyConstraints();
-        Schema::dropIfExists('ratings');
+        Schema::dropIfExists('countries');
         Schema::enableForeignKeyConstraints();
     }
 };

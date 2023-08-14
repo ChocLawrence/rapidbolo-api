@@ -13,6 +13,8 @@ use App\Traits\ApiResponser;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Code;
+use App\Models\StatusHistory;
+use App\Models\UserActivity;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Facades\Image;
@@ -54,6 +56,40 @@ class UserController extends Controller
                 return $this->errorResponse("Verify email before logging in.", 404);
             }
 
+            //check if user has already logged in.
+            
+            $activity = UserActivity::where('user_id', $user->id)
+                                    ->orderBy('created_at', 'desc')->first();
+
+
+            if($activity->state == "login"){
+                //user is already logged in
+                return $this->errorResponse("User is already logged in", 404);
+            }
+            //end check if user has already logged in.
+
+            //user activity 
+
+            $userActivity= new UserActivity(); 
+            $userActivity->report = "Login"; 
+            $userActivity->state = "login";
+            $userActivity->online = true; 
+            $userActivity->user_id = $user->id; 
+            
+            if($request->longitude){
+              $userActivity->longitude = $request->longitude;
+            }
+
+            if($request->latitude){
+              $userActivity->latitude = $request->latitude;
+            }
+
+            $userActivity->save();
+
+            //end user activity 
+
+            //end check if user has already logged in
+
             $token = $user->createToken((string)$request->device_name)->plainTextToken;
 
             $response = [
@@ -88,12 +124,29 @@ class UserController extends Controller
                 'phone' => $request->phone,
                 'dob' => $request->dob,
                 'gender' => $request->gender,
-                'role_id' => '1',
-                'status_id' => '2',
-                'plan_id' => '1',
                 'password' => Hash::make($request->password),
                 'email' => $request->email
             ]);
+
+             //user activity 
+
+             $userActivity= new UserActivity(); 
+             $userActivity->report = "Login from sign up"; 
+             $userActivity->state = "login";
+             $userActivity->online = true; 
+             $userActivity->user_id = $user->id; 
+             
+             if($request->longitude){
+               $userActivity->longitude = $request->longitude;
+             }
+ 
+             if($request->latitude){
+               $userActivity->latitude = $request->latitude;
+             }
+ 
+             $userActivity->save();
+ 
+             //end user activity 
     
             $response = [
                'token' => $user->createToken((string)$request->device_name)->plainTextToken
@@ -111,9 +164,40 @@ class UserController extends Controller
     }
 
      // this method signs out users by removing tokens
-    public function logout()
+    public function logout(Request $request)
     {
         try{
+
+            $validator = $this->validateLogout();
+            if($validator->fails()){
+               return $this->errorResponse($validator->messages(), 422);
+            }
+
+
+            if (Auth::check())
+            {
+                $id = Auth::id();
+            }
+
+             //user activity 
+
+             $userActivity= new UserActivity(); 
+             $userActivity->report = "Logout"; 
+             $userActivity->state = "logout";
+             $userActivity->online = false; 
+             $userActivity->user_id = $id; 
+             
+             if($request->longitude){
+               $userActivity->longitude = $request->longitude;
+             }
+ 
+             if($request->latitude){
+               $userActivity->latitude = $request->latitude;
+             }
+ 
+             $userActivity->save();
+ 
+             //end user activity 
 
             auth()->user()->tokens()->delete();
             $response = [
@@ -204,11 +288,173 @@ class UserController extends Controller
 
         try{
             $user= User::where('id', $id)->firstOrFail();
+
+            //check if user is admin
+
+            if(!$user->isAdmin()){
+
+                if (Auth::check())
+                {
+                    $id = Auth::id();
+                }
+
+                if( $user->id != $id){
+                    return $this->errorResponse("You are not authorized", 404);
+                }
+            }
+            
             return $this->successResponse($user);
         }catch(\Exception $e){
             return $this->errorResponse($e->getMessage(), 404);
         }
         
+    }
+
+    /**
+     * Post resource.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function banUser(Request $request)
+    {
+        try{
+
+            if(count($request->all()) == 0){
+                return $this->errorResponse("Missing data.Pass fields", 404);  
+            }
+
+            $validator = $this->validateUser();
+            if($validator->fails()){
+               return $this->errorResponse($validator->messages(), 422);
+            }
+
+            $user = User::findOrFail($request->user_id);
+            $userStatus = Status::where('id', $user->status_id)->firstOrFail();
+
+            if($userStatus->name == 'banned'){
+                //already banned
+                return $this->errorResponse("User already banned", 404);  
+            }else{
+                //update status to banned
+                $bannedStatus = Status::where('name', 'banned')->firstOrFail();
+                $user->status_id = $bannedStatus->id;
+                $user->save();
+
+                return $this->successResponse(null,"User Banned successfully", 200);
+            }
+
+
+        }catch(\Exception $e){
+            return $this->errorResponse( $e->getMessage(), 404);
+        }
+    }
+
+
+    /**
+     * Post resource.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function activateUser(Request $request)
+    {
+        try{
+
+            if(count($request->all()) == 0){
+                return $this->errorResponse("Missing data.Pass fields", 404);  
+            }
+
+            $validator = $this->validateUser();
+            if($validator->fails()){
+               return $this->errorResponse($validator->messages(), 422);
+            }
+
+            $user = User::findOrFail($request->user_id);
+            $userStatus = Status::where('id', $user->status_id)->firstOrFail();
+
+            if($userStatus->name == 'active'){
+                //already active
+                return $this->errorResponse("User already active", 404);  
+            }else{
+                //update status to active
+                $activeStatus = Status::where('name', 'active')->firstOrFail();
+                $user->status_id = $activeStatus->id;
+                $user->marked_date = null;
+                $user->marked_exp_date = null;
+                $user->save();
+
+                return $this->successResponse(null,"User Activated successfully", 200);
+            }
+
+
+        }catch(\Exception $e){
+            return $this->errorResponse( $e->getMessage(), 404);
+        }
+    }
+
+      /**
+     * Post resource.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function markUserDeletion(Request $request)
+    {
+        try{
+
+            if(count($request->all()) == 0){
+                return $this->errorResponse("Missing data.Pass fields", 404);  
+            }
+
+            $validator = $this->validateUser();
+            if($validator->fails()){
+               return $this->errorResponse($validator->messages(), 422);
+            }
+
+            $user = User::findOrFail($request->user_id);
+            $userStatus = Status::where('id', $user->status_id)->firstOrFail();
+
+            if($userStatus->name == 'marked'){
+                //already marked
+                return $this->errorResponse("User already marked for deletion", 404);  
+            }else{
+                //update status to marked for deletion
+
+                $markedStatus = Status::where('name', 'mark')->firstOrFail();
+                $user->status_id = $markedStatus->id;
+                $user->save();
+
+
+                $today= Carbon::now()->format('Y-m-d');
+                $marked_date = Carbon::createFromFormat('Y-m-d', $today);
+
+                $marked_date_plus_30 = Carbon::now()->addDays(30)->format('Y-m-d');
+                $end_date = Carbon::createFromFormat('Y-m-d',  $marked_date_plus_30)->endOfDay();
+             
+
+                //status history
+
+                $statusHistory= new StatusHistory(); 
+                $statusHistory->status_id = $markedStatus->id; 
+                $statusHistory->user_id = $user->id; 
+                $statusHistory->note = "User marked to delete in 30 days.";
+                $statusHistory->user_marked_date = $marked_date; 
+                $statusHistory->user_marked_exp_date = $end_date;
+                $statusHistory->save();
+
+                // status history end
+
+             
+                //send notification to user to inform that after 30days, data will be deleted
+
+                return $this->successResponse(null,"User Marked for deletion successfully", 200);
+            }
+
+
+        }catch(\Exception $e){
+            return $this->errorResponse( $e->getMessage(), 404);
+        }
     }
 
 
@@ -337,6 +583,16 @@ class UserController extends Controller
         return Validator::make(request()->all(), [
             'username' => 'required|string|max:40',
             'password' => 'required|string|min:6',
+            'longitude' => 'nullable|string|max:100',
+            'latitude' => 'nullable|string|max:100',
+        ]);
+    }
+
+
+    public function validateLogout(){
+        return Validator::make(request()->all(), [
+            'longitude' => 'nullable|string|max:100',
+            'latitude' => 'nullable|string|max:100',
         ]);
     }
 
@@ -350,6 +606,8 @@ class UserController extends Controller
             'phone' => 'string|min:7|max:20',
             'dob' => 'date_format:Y-m-d|before:today',
             'gender' => 'required|in:male,female', 
+            'longitude' => 'nullable|string|max:100',
+            'latitude' => 'nullable|string|max:100',
             'email' => 'required|string|email|unique:users,email',
             'password' => 'required|string|min:6|confirmed'
         ]);
@@ -366,6 +624,13 @@ class UserController extends Controller
             'token' => 'required',
             'email' => 'required|email',
             'password' => ['required', 'confirmed', RulesPassword::defaults()]
+        ]);
+    }
+
+
+    public function validateUser(){
+        return Validator::make(request()->all(), [
+            'user_id' => 'nullable|exists:users,id',
         ]);
     }
     

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Notification;
+use App\Models\Status;
 use App\Traits\ApiResponser;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -36,11 +37,11 @@ class NotificationController extends Controller
             }
 
             if($request->sender_id){
-                $notification_query->where('sender_id', $request->sender_id);
+                $notification_query->where('sender_user_id', $request->sender_id);
             }
 
             if($request->receiver_id){
-                $notification_query->where('receiver_id', $request->receiver_id);
+                $notification_query->where('receiver__user_id', $request->receiver_id);
             }
 
             if($request->sortBy && in_array($request->sortBy,['id','created_at'])){
@@ -92,13 +93,13 @@ class NotificationController extends Controller
                 $end_date->addHours(23)
                 ->addMinutes(59);
 
-                $messagings = $notification_query->orderBY($sortBy,$sortOrder)->whereBetween('created_at', array($start_date, $end_date))->paginate($page_size);
+                $notifications = $notification_query->orderBY($sortBy,$sortOrder)->whereBetween('created_at', array($start_date, $end_date))->paginate($page_size);
            
             }else{
-                $messagings = $notification_query->orderBY($sortBy,$sortOrder)->get();
+                $notifications = $notification_query->orderBY($sortBy,$sortOrder)->get();
             }
   
-            return $this->successResponse($messagings);
+            return $this->successResponse($notifications);
         }catch(\Exception $e){
             return $this->errorResponse($e->getMessage(), 404);
         }
@@ -138,15 +139,18 @@ class NotificationController extends Controller
             }
 
             $notification=new Notification();
+
+            $status = Status::where('name', 'unread')->firstOrFail();
             $notification->summary= $request->summary;
-            $notification->details= $request->details;
-            $notification->sender_id= $request->sender_id;
-            $notification->receiver_id= $request->receiver_id;
+            $notification->message= $request->message;
+            $notification->sender_user_id= $request->sender_id;
+            $notification->receiver_user_id= $request->receiver_id;
             $notification->label_id= $request->label_id;
+            $notification->status_id= $status->id;
             $notification->url= $request->url;
             $notification->save();
 
-            return $this->successResponse($notification,"Saved successfully", 200);
+            return $this->successResponse($notification,"Sent successfully", 200);
 
         }catch(\Exception $e){
             return $this->errorResponse($e->getMessage(), 404);
@@ -161,7 +165,7 @@ class NotificationController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function updateNotification(Request $request, $id)
+    public function updateNotificationStatus(Request $request, $id)
     {
 
         try{
@@ -170,19 +174,18 @@ class NotificationController extends Controller
                 return $this->errorResponse("Nothing to update.Pass fields", 404);  
             }
 
-            $validator = $this->validateNotification();
+            $validator = $this->validateNotificationStatus();
             if($validator->fails()){
                return $this->errorResponse($validator->messages(), 422);
             }
 
             $notification=Notification::findOrFail($id);
-            $notification->summary= $request->summary;
-            $notification->details= $request->details;
-            $notification->sender_id= $request->sender_id;
-            $notification->receiver_id= $request->receiver_id;
-            $notification->label_id= $request->label_id;
-            $notification->url= $request->url;
-            $notification->read= $request->read;
+
+            if($request->status_id){
+                $status = Status::where('id', $request->status_id)->firstOrFail();
+                $notification->status_id= $status->id;
+            }
+            
             $notification->save();
 
             return $this->successResponse($notification,"Updated successfully", 200);
@@ -207,7 +210,8 @@ class NotificationController extends Controller
         try{
 
             $notification=Notification::findOrFail($id);
-            $notification->read= true;
+            $status = Status::where('name', 'read')->firstOrFail();
+            $notification->status_id= $status->id;
             $notification->save();
 
             return $this->successResponse($notification,"Updated successfully", 200);
@@ -232,7 +236,8 @@ class NotificationController extends Controller
         try{
 
             $notification=Notification::findOrFail($id);
-            $notification->read= false;
+            $status = Status::where('name', 'unread')->firstOrFail();
+            $notification->status_id= $status->id;
             $notification->save();
 
             return $this->successResponse($notification,"Updated successfully", 200);
@@ -267,9 +272,14 @@ class NotificationController extends Controller
             'receiver_id' => 'required|exists:users,id',
             'label_id' => 'nullable|exists:labels,id',
             'summary' => 'required|string|max:50', 
-            'details' => 'required|string|max:5000', 
-            'url' => 'nullable|string|max:100', 
-            'read' => 'nullable|boolean|in:true,false', 
+            'message' => 'required|string|max:1000', 
+            'url' => 'nullable|string|max:100'
+        ]);
+    }
+
+    public function validateNotificationStatus(){
+        return Validator::make(request()->all(), [
+            'status_id' => 'nullable|exists:statuses,id',
         ]);
     }
 }

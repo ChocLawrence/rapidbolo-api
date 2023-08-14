@@ -86,9 +86,10 @@ class CategoryController extends Controller
                 $id = Auth::id();
             }
 
+            $activeStatus = Status::where('name', 'active')->firstOrFail();
             $category= new Category();
             $category->name= $request->name;
-            $category->status_id= $request->status_id ? $request->status_id : '1';
+            $category->status_id= $request->status_id ? $request->status_id : $activeStatus->id;
             $category->slug=$slug;
             $category->description= $request->description;
             $category->created_by = $id;

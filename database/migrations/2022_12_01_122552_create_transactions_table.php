@@ -17,27 +17,31 @@ return new class extends Migration
         Schema::dropIfExists('transactions');
         Schema::create('transactions', function (Blueprint $table) {
              $table->bigIncrements('id');
-             $table->string('name');
-             $table->string('amount');
-             $table->string('sender_phone')->nullable();
-             $table->string('sender_name')->nullable();
-             $table->string('receiver_phone')->nullable();
-             $table->string('receiver_name')->nullable();
              $table->string('description');
+             $table->string('amount');
+             $table->foreignId('country_id')
+             ->nullable()
+             ->constrained('countries')
+             ->onDelete('cascade');
              $table->foreignId('status_id')
              ->constrained('statuses')
              ->onDelete('cascade'); 
-             $table->foreignId('transaction_id')
+             $table->foreignId('transaction_type_id')
              ->constrained('transaction_types')
              ->onDelete('cascade');
              $table->foreignId('payment_method_id')
              ->constrained('payment_methods')
+             ->onDelete('cascade');
+             $table->foreignId('demand_id')
+             ->nullable()
+             ->constrained('demands')
              ->onDelete('cascade');
              $table->foreignId('user_id')
              ->constrained('users')
              ->onDelete('cascade');
              $table->timestamps();
          });
+        Schema::enableForeignKeyConstraints();
     }
 
     /**

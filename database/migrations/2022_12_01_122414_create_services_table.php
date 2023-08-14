@@ -26,6 +26,13 @@ return new class extends Migration
              $table->string('experience')->nullable();
              $table->string('completed')->nullable();
              $table->string('rating')->nullable();
+             $table->foreignId('status_id')
+             ->constrained('statuses')
+             ->onDelete('cascade');
+             $table->foreignId('payment_pref_id')
+             ->nullable()
+             ->constrained('payment_preferences')
+             ->onDelete('cascade');
              $table->foreignId('user_id')
              ->constrained('users')
              ->onDelete('cascade');
@@ -34,6 +41,7 @@ return new class extends Migration
              ->onDelete('cascade'); 
              $table->timestamps();
          });
+        Schema::enableForeignKeyConstraints();
     }
 
     /**

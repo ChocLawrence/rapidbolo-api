@@ -14,19 +14,17 @@ return new class extends Migration
     public function up()
     {
         Schema::disableForeignKeyConstraints();
-        Schema::dropIfExists('ratings');
-        Schema::create('ratings', function (Blueprint $table) {
-             $table->bigIncrements('id');
-             $table->string('value');
-             $table->string('comment')->nullable();
-             $table->foreignId('user_id')
-             ->constrained('users')
-             ->onDelete('cascade');
-             $table->foreignId('demand_id')
-             ->constrained('demands')
-             ->onDelete('cascade');
-             $table->timestamps();
-         });
+        Schema::dropIfExists('labels');
+        Schema::create('labels', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->string('name');
+            $table->string('priority')->unique();
+            $table->foreignId('color_id')
+            ->nullable()
+            ->constrained('colors')
+            ->onDelete('cascade');  
+            $table->timestamps();
+        });
         Schema::enableForeignKeyConstraints();
     }
 
@@ -38,7 +36,7 @@ return new class extends Migration
     public function down()
     {
         Schema::disableForeignKeyConstraints();
-        Schema::dropIfExists('ratings');
+        Schema::dropIfExists('labels');
         Schema::enableForeignKeyConstraints();
     }
 };

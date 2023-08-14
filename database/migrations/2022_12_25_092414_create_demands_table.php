@@ -18,9 +18,17 @@ return new class extends Migration
         Schema::create('demands', function (Blueprint $table) {
              $table->bigIncrements('id');
              $table->string('description');
-             $table->string('address');
+             $table->string('address'); 
              $table->mediumText('images')->nullable();
-             $table->string('amount')->nullable();
+             $table->string('p_stages')->default(1);
+             $table->string('p1_amount')->nullable();
+             $table->string('p2_amount')->nullable();
+             $table->boolean('d_cfm_amount')->default(false);
+             $table->boolean('p_cfm_amount')->default(false);
+             $table->string('d_note')->nullable();
+             $table->string('p_note')->nullable();
+             $table->string('deadline')->nullable();
+             $table->string('delivery_date')->nullable();
              $table->decimal('longitude', 10, 8)->nullable();
              $table->decimal('latitude', 11, 8)->nullable();
              $table->foreignId('status_id')
@@ -39,6 +47,7 @@ return new class extends Migration
              ->onDelete('cascade');
              $table->timestamps();
          });
+        Schema::enableForeignKeyConstraints();
     }
 
     /**

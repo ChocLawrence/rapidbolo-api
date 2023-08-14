@@ -14,17 +14,16 @@ return new class extends Migration
     public function up()
     {
         Schema::disableForeignKeyConstraints();
-        Schema::dropIfExists('verifications');
-        Schema::create('verifications', function (Blueprint $table) {
+        Schema::dropIfExists('user_activities');
+        Schema::create('user_activities', function (Blueprint $table) {
              $table->bigIncrements('id');
-             $table->mediumText('attachment')->nullable();
-             $table->foreignId('verification_type_id')
-             ->constrained('verification_types')
-             ->onDelete('cascade');
-             $table->foreignId('status_id')
-             ->constrained('statuses')
-             ->onDelete('cascade');
+             $table->boolean('online')->default(false);
+             $table->enum('state',['login','logout','reconnect','lostcon']);
+             $table->string('report')->nullable();
+             $table->decimal('longitude', 10, 8)->nullable();
+             $table->decimal('latitude', 11, 8)->nullable();
              $table->foreignId('user_id')
+             ->nullable()
              ->constrained('users')
              ->onDelete('cascade');
              $table->timestamps();
@@ -38,9 +37,9 @@ return new class extends Migration
      * @return void
      */
     public function down()
-    {   
+    {
         Schema::disableForeignKeyConstraints();
-        Schema::dropIfExists('verifications');
+        Schema::dropIfExists('user_activities');
         Schema::enableForeignKeyConstraints();
     }
 };

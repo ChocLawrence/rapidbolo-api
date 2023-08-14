@@ -17,10 +17,10 @@ return new class extends Migration
         Schema::dropIfExists('plans');
         Schema::create('plans', function (Blueprint $table) {
              $table->bigIncrements('id');
-             $table->string('name');
+             $table->string('name')->unique();
              $table->string('duration');
              $table->text('description');
-             $table->string('price')->nullable();
+             $table->string('amount')->nullable();
              $table->foreignId('status_id')
              ->constrained('statuses')
              ->onDelete('cascade');
@@ -30,6 +30,7 @@ return new class extends Migration
              ->onDelete('cascade');
              $table->timestamps();
          });
+        Schema::enableForeignKeyConstraints();
     }
 
     /**

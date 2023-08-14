@@ -2,15 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\TransactionType;
+use App\Models\VerificationType;
 use App\Traits\ApiResponser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\Controller;
-use Auth;
 
-class TransactionTypeController extends Controller
+class VerificationTypeController extends Controller
 {
 
     use ApiResponser;
@@ -21,10 +20,10 @@ class TransactionTypeController extends Controller
      * @return \Illuminate\Http\Response
      */
 
-    public function getTransactionTypes(){
+    public function getVerificationTypes(){
         try{
-            $transactionTypes= TransactionType::latest()->get();
-            return $this->successResponse($transactionTypes);
+            $verificationTypes= VerificationType::latest()->get();
+            return $this->successResponse($verificationTypes);
         }catch(\Exception $e){
             return $this->errorResponse($e->getMessage(), 404);
         }
@@ -36,11 +35,11 @@ class TransactionTypeController extends Controller
      * @return \Illuminate\Http\Response
      */
 
-    public function getTransactionType($id) {
+    public function getVerificationType($id) {
 
         try{
-            $transactionType= TransactionType::where('id', $id)->get();
-            return $this->successResponse($transactionType);
+            $verificationType= VerificationType::where('id', $id)->get();
+            return $this->successResponse($verificationType);
         }catch(\Exception $e){
             return $this->errorResponse($e->getMessage(), 404);
         }
@@ -53,27 +52,20 @@ class TransactionTypeController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function addTransactionType(Request $request)
+    public function addVerificationType(Request $request)
     {
         try{
-            $validator = $this->validateTransactionType();
+            $validator = $this->validateVerificationType();
             if($validator->fails()){
             return $this->errorResponse($validator->messages(), 422);
             }
 
-            if (Auth::check())
-            {
-                $userId = Auth::id();
-            }
+            $verificationType=new VerificationType();
+            $verificationType->name= $request->name;
+            $verificationType->slug= Str::slug($request->name);
+            $verificationType->save();
 
-            $transactionType=new TransactionType();
-            $transactionType->name= $request->name;
-            $transactionType->slug= Str::slug($request->name);
-            $transactionType->description= $request->description;
-            $transactionType->created_by= $userId;
-            $transactionType->save();
-
-            return $this->successResponse($transactionType,"Saved successfully", 200);
+            return $this->successResponse($verificationType,"Saved successfully", 200);
 
         }catch(\Exception $e){
             return $this->errorResponse($e->getMessage(), 404);
@@ -88,7 +80,7 @@ class TransactionTypeController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function updateTransactionType(Request $request, $id)
+    public function updateVerificationType(Request $request, $id)
     {
 
         try{
@@ -97,31 +89,18 @@ class TransactionTypeController extends Controller
                 return $this->errorResponse("Nothing to update.Pass fields", 404);  
             }
 
-            $validator = $this->validateTransactionType();
+            $validator = $this->validateVerificationType();
             if($validator->fails()){
                return $this->errorResponse($validator->messages(), 422);
             }
 
-            if (Auth::check())
-            {
-                $userId = Auth::id();
-            }
-
-            $transactionType=TransactionType::findOrFail($id);
+            $verificationType=VerificationType::findOrFail($id);
         
-            if($request->name){
-                $transactionType->name=$request->name;  
-                $transactionType->slug=Str::slug($request->name);
-            }
+            $verificationType->name=$request->name;  
+            $verificationType->slug=Str::slug($request->name);
+            $verificationType->save();
 
-            if($request->description){
-                $transactionType->description=$request->description; 
-            }
-
-            $transactionType->created_by= $userId;
-            $transactionType->save();
-
-            return $this->successResponse($transactionType,"Updated successfully", 200);
+            return $this->successResponse($verificationType,"Updated successfully", 200);
 
         }catch(\Exception $e){
             return $this->errorResponse($e->getMessage(), 404);
@@ -136,11 +115,11 @@ class TransactionTypeController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function deleteTransactionType($id)
+    public function deleteVerificationType($id)
     {
         try{
 
-            TransactionType::findOrFail($id)->delete();
+            VerificationType::findOrFail($id)->delete();
             return $this->successResponse(null,"Deleted successfully", 200);
 
         }catch(\Exception $e){
@@ -148,10 +127,9 @@ class TransactionTypeController extends Controller
         }
     }
 
-    public function validateTransactionType(){
+    public function validateVerificationType(){
         return Validator::make(request()->all(), [
-            'name' => 'required|string|max:50',
-            'description' => 'required|string|max:200'
+            'name' => 'required|string|max:100'
         ]);
     }
 }

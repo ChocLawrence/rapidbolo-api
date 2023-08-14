@@ -19,8 +19,11 @@ return new class extends Migration
              $table->bigIncrements('id');
              $table->string('summary');
              $table->string('message');
-             $table->string('url');
-             $table->mediumText('images')->nullable();
+             $table->string('url')->nullable();
+             $table->foreignId('label_id')
+             ->nullable()
+             ->constrained('labels')
+             ->onDelete('cascade');
              $table->foreignId('status_id')
              ->constrained('statuses')
              ->onDelete('cascade');
@@ -32,6 +35,7 @@ return new class extends Migration
              ->onDelete('cascade'); 
              $table->timestamps();
          });
+        Schema::enableForeignKeyConstraints();
     }
 
     /**

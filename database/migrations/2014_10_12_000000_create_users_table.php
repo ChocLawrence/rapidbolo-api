@@ -25,6 +25,10 @@ return new class extends Migration
             $table->enum('gender',['male','female']);
             $table->mediumText('image')->nullable();
             $table->string('address')->nullable();
+            $table->foreignId('country_id')
+            ->nullable()
+            ->constrained('countries')
+            ->onDelete('cascade');  
             $table->string('email')->unique();
             $table->text('bio')->nullable();
             $table->string('phone')->unique()->nullable();
@@ -33,13 +37,16 @@ return new class extends Migration
             $table->decimal('longitude', 10, 8)->nullable();
             $table->decimal('latitude', 11, 8)->nullable();
             $table->foreignId('status_id')
+                 ->default(1)
                  ->nullable()
                  ->constrained('statuses')
                  ->onDelete('cascade');   
             $table->foreignId('role_id')
+                 ->default(2)
                  ->constrained('roles')
                  ->onDelete('cascade'); 
             $table->foreignId('plan_id')
+                 ->nullable()
                  ->constrained('plans')
                  ->onDelete('cascade');      
             $table->rememberToken();

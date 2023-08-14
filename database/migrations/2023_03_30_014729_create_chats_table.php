@@ -28,11 +28,12 @@ return new class extends Migration
              $table->foreignId('receiver_user_id')
              ->constrained('users')
              ->onDelete('cascade'); 
-             $table->foreignId('request_id')
-             ->constrained('requests')
+             $table->foreignId('demand_id')
+             ->constrained('demands')
              ->onDelete('cascade');
              $table->timestamps();
          });
+        Schema::enableForeignKeyConstraints();
     }
 
     /**

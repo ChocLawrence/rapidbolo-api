@@ -18,7 +18,7 @@ class Role
         // $user = $request->user();
         // dd($user);
 
-        if (!Auth::check()) // I included this check because you have it, but it really should be part of your 'auth' middleware, most likely added as part of a route group.
+        if (!Auth::check())
          return $this->errorResponse("Not logged in", 422);
 
         $user = Auth::user();
@@ -33,5 +33,6 @@ class Role
         }
 
         return $this->errorResponse("Unauthorized action", 422);
+        
     }
 }

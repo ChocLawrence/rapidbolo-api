@@ -78,44 +78,6 @@ class FeedbackController extends Controller
 
 
     /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function updateFeedback(Request $request, $id)
-    {
-
-        try{
-
-            if(count($request->all()) == 0){
-                return $this->errorResponse("Nothing to update.Pass fields", 404);  
-            }
-
-            $validator = $this->validateFeedback();
-            if($validator->fails()){
-               return $this->errorResponse($validator->messages(), 422);
-            }
-
-            $feedback=Feedback::findOrFail($id);
-        
-            $feedback->name=$request->name;  
-            $feedback->email= $request->email;
-            $feedback->phone= $request->phone;
-            $feedback->message= $request->message;
-            $feedback->save();
-
-            return $this->successResponse($feedback,"Updated successfully", 200);
-
-        }catch(\Exception $e){
-            return $this->errorResponse($e->getMessage(), 404);
-        }
-        
-        
-    }
-
-    /**
      * Remove the specified resource from storage.
      *
      * @param  int  $id
@@ -135,7 +97,9 @@ class FeedbackController extends Controller
 
     public function validateFeedback(){
         return Validator::make(request()->all(), [
-            'name' => 'required|string|max:100'
+            'name' => 'required|string|max:100',
+            'email' => 'required|email',
+            'message' => 'required|string|max:200',
         ]);
     }
 }
